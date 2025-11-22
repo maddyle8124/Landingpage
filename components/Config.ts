@@ -8,6 +8,9 @@ export const CONFIG = {
   // The base URL for your images
   baseImageURL: "https://maddyleescorner.wordpress.com/wp-content/uploads/2025/11",
   
+  // URL for Google Apps Script Web App (Leave empty to simulate locally)
+  googleSheetsWebhookUrl: "https://script.google.com/macros/s/AKfycbxOWLkH_Mz7V-LBtUpAuHzp_sZKVDwLOJHKvLjfudZ6fMFwLPdU6uOd7bQlQA6Gxqcp4w/exec", 
+  
   // App Title & Description
   title: "Welcome, It's Maddy!!",
   description: "Glad to see you here, tap this folder and get to know me real quick :)",
@@ -63,7 +66,7 @@ export const CONFIG = {
     hero: {
       headline: "Hi, I’m Maddy.",
       subHeadline: "A part-time tech marketer, brand builder, storyteller, and full-time ADHD.",
-      descriptor: "I turn dry features into juicy narrative, create brands people remember of and products people talk about."
+      descriptor: "I turn dry features into juicy narrative, create brands people remember and products people talk about."
     },
     // Brands Scroller Section
     brands: {

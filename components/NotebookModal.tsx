@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { CompositionNotebookIcon, OpenCompositionNotebookIcon } from './CustomIcons';
+import { CONFIG } from './Config';
 
 interface NotebookModalProps {
   isOpen: boolean;
@@ -37,211 +38,233 @@ export const NotebookModal: React.FC<NotebookModalProps> = ({ isOpen, onClose })
 
   const handleSend = async () => {
     setIsSending(true);
-
-    // Capture the data structure for "Excel"
-    const payload = {
-        Timestamp: new Date().toLocaleString(),
-        From: userName,
-        Contact: userContact,
-        Topic: userTopic,
-        Content: userMessage
-    };
-
-    // --- SIMULATING BACKEND SAVE ---
-    // In a real app, you would use fetch() here to POST 'payload' to your API or Google Sheets endpoint.
-    console.table(payload); 
     
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // If NO Google URL is set in Config, simulate success (Development Mode)
+    if (!CONFIG.googleSheetsWebhookUrl) {
+        console.log("DEV MODE: Simulation Data Sent", {
+            Timestamp: new Date().toISOString(),
+            Name: userName,
+            Contact: userContact,
+            Topic: userTopic,
+            Content: userMessage
+        });
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        setIsSending(false);
+        setStage('success');
+        return;
+    }
 
-    setIsSending(false);
-    setStage('success');
+    // If URL exists, send REAL data to Google Sheet
+    try {
+        const formData = new FormData();
+        formData.append("timestamp", new Date().toLocaleString());
+        formData.append("name", userName);
+        formData.append("topic", userTopic);
+        formData.append("message", userMessage);
+        formData.append("contact", userContact);
+
+        await fetch(CONFIG.googleSheetsWebhookUrl, {
+            method: "POST",
+            body: formData
+        });
+        
+        // Assuming success if no network error thrown
+        setIsSending(false);
+        setStage('success');
+    } catch (error) {
+        console.error("Error sending data", error);
+        alert("Something went wrong. Please check your connection and try again.");
+        setIsSending(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300 pointer-events-none">
-      {/* Note: pointer-events-none on container lets clicks pass through to background if not hitting modal, 
-          but we enable pointer-events-auto on the modal itself. */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
       
+      {/* Invisible backdrop to catch clicks outside */}
+      <div className="absolute inset-0 bg-transparent" onClick={onClose}></div>
+
       {/* 
-          Container:
-          - Form Stage: Portrait aspect ratio (Closed book)
-          - Writing/Success Stage: Landscape aspect ratio (Open book)
-          - Floating Liquid Glass Style (No dark overlay)
+          MODAL CONTAINER 
+          - Floating Liquid Glass Card
+          - No dark backdrop
+          - Subtle shadow
       */}
       <div 
-        className={`
-            relative w-full transition-all duration-500 ease-in-out flex items-center justify-center pointer-events-auto
-            ${stage === 'form' ? 'max-w-sm aspect-[3/4]' : 'max-w-3xl aspect-[1.4/1]'}
-            bg-white/30 backdrop-blur-xl border border-white/40 rounded-[32px] 
-            shadow-[0_20px_50px_rgba(0,0,0,0.35)]
-            p-5
-        `}
+        className="relative z-[110] bg-white/30 backdrop-blur-xl border border-white/40 rounded-[32px] shadow-[0_20px_50px_rgba(0,0,0,0.35)] p-5 overflow-hidden transition-all duration-500"
+        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
       >
         
-        {/* Close Button (Moved Inside the Glass Frame) */}
+        {/* CLOSE BUTTON - Inside the glass frame */}
         <button 
-            onClick={onClose}
-            className="absolute top-6 right-6 text-gray-800/70 hover:text-red-600 transition-colors p-2 z-[60] bg-white/40 hover:bg-white/80 rounded-full backdrop-blur-sm shadow-sm"
+          onClick={onClose}
+          className="absolute top-6 right-6 z-[120] p-2 text-gray-800 hover:bg-white/40 rounded-full transition-all"
         >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 6L6 18M6 6l12 12" /></svg>
         </button>
 
-        {/* Background Icons (Inset to show glass border) */}
-        <div className="absolute inset-5 drop-shadow-2xl transition-all duration-500 pointer-events-none">
-           {stage === 'form' ? (
-              <CompositionNotebookIcon className="w-full h-full" />
-           ) : (
-              <OpenCompositionNotebookIcon className="w-full h-full" />
-           )}
-        </div>
-
-        {/* --- STAGE 1: INPUT FORM --- */}
+        {/* --- STAGE 1: COVER FORM --- */}
         {stage === 'form' && (
-          <div className="relative z-10 w-[85%] bg-white/20 backdrop-blur-xl border border-white/30 p-6 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.2)] text-center flex flex-col items-center animate-in zoom-in-95 duration-300">
-              
-              <h3 className="text-xl font-bold text-white mb-1 drop-shadow-md leading-tight">
-                  thanks for jumping in!
-              </h3>
-              
-              {/* Name Field */}
-              <p className="text-white/90 text-xs mb-2 font-medium drop-shadow-sm mt-2">
-                  your name is?
-              </p>
-              <input 
-                  type="text" 
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Enter your name..." 
-                  className="w-full bg-white/80 backdrop-blur-sm border-none rounded-xl px-4 py-2 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-white/50 outline-none transition-all mb-3 text-center font-medium shadow-inner"
-                  autoFocus
-              />
-
-              {/* Topic Field */}
-              <p className="text-white/90 text-xs mb-2 font-medium drop-shadow-sm">
-                  what you want to talk about :) ?
-              </p>
-              <textarea 
-                  value={userTopic}
-                  onChange={(e) => setUserTopic(e.target.value)}
-                  placeholder="share me your topic" 
-                  className="w-full bg-white/80 backdrop-blur-sm border-none rounded-xl px-4 py-2 text-gray-900 placeholder-gray-500 focus:ring-2 focus:ring-white/50 outline-none transition-all mb-4 text-center font-medium shadow-inner resize-none h-16"
-              />
-              
-              {/* Start Writing Button */}
-              <button 
+          <div className="relative w-full max-w-[340px] aspect-[200/260] animate-in zoom-in-95 duration-500">
+            
+            {/* Rounded Glass Frame for Notebook Graphic */}
+            <div className="relative w-full h-full rounded-[24px] overflow-hidden border border-white/20 shadow-inner">
+                <CompositionNotebookIcon className="w-full h-full object-cover drop-shadow-2xl" />
+            </div>
+            
+            {/* Inputs Overlay - Glass Card */}
+            <div className="absolute top-[20%] left-[15%] right-[15%] bottom-[20%] bg-white/60 backdrop-blur-md border border-white/40 rounded-2xl shadow-lg px-4 py-6 flex flex-col gap-4">
+               <div className="flex-1 flex flex-col justify-center gap-4">
+                  <div className="space-y-1">
+                     <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-600 text-center">Your Name</label>
+                     <input 
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)}
+                        className="w-full bg-transparent border-b border-gray-400 text-center font-serif font-bold text-lg text-gray-900 focus:border-black focus:outline-none placeholder-gray-400"
+                        placeholder="Maddy?"
+                        autoFocus
+                     />
+                  </div>
+                  <div className="space-y-1">
+                     <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-600 text-center">Topic</label>
+                     <input 
+                        value={userTopic}
+                        onChange={(e) => setUserTopic(e.target.value)}
+                        className="w-full bg-transparent border-b border-gray-400 text-center font-serif text-base text-gray-900 focus:border-black focus:outline-none placeholder-gray-400"
+                        placeholder="Collab?"
+                     />
+                  </div>
+               </div>
+               <button 
                   onClick={handleStartWriting}
-                  className="w-full bg-black/40 backdrop-blur-md border border-white/10 hover:bg-black/50 text-white font-semibold py-3 rounded-xl transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={!userName.trim() || !userTopic.trim()}
-              >
-                  Start Writing
-              </button>
+                  className="w-full py-3 bg-black text-white font-bold text-[10px] sm:text-xs uppercase tracking-widest rounded-lg hover:bg-gray-800 transition-colors disabled:opacity-50 shadow-md"
+               >
+                  START WRITING
+               </button>
+            </div>
           </div>
         )}
 
-        {/* --- STAGE 2: WRITING PAGE --- */}
+        {/* --- STAGE 2: WRITING (OPEN BOOK) --- */}
         {stage === 'writing' && (
-            <div className="absolute inset-5 flex pointer-events-auto animate-in fade-in duration-500">
-                
-                {/* --- LEFT PAGE: WRITING CONTENT --- */}
-                <div className="absolute top-[10%] bottom-[10%] left-[4%] width-[44%] right-[52%] px-4 py-2 flex flex-col">
-                    
-                    <div className="mb-2 text-gray-700 font-serif text-[10px] sm:text-xs space-y-1 border-b border-gray-300/60 pb-2">
-                        <div className="flex items-baseline">
-                            <span className="font-bold w-10 opacity-70">From:</span>
-                            <span className="font-medium italic truncate">{userName}</span>
-                        </div>
-                        <div className="flex items-baseline">
-                            <span className="font-bold w-10 opacity-70">To:</span>
-                            <span className="font-medium">Maddy</span>
-                        </div>
-                        <div className="flex items-baseline">
-                            <span className="font-bold w-10 opacity-70">Topic:</span>
-                            <span className="font-medium text-blue-800 truncate">{userTopic}</span>
-                        </div>
-                    </div>
+          <div className="relative w-full max-w-5xl animate-in fade-in slide-in-from-bottom-8 duration-500">
+              
+              {/* DESKTOP LAYOUT: Full SVG Background */}
+              <div className="hidden md:block relative aspect-[280/200]">
+                  <OpenCompositionNotebookIcon className="w-full h-full" />
+                  
+                  {/* Left Page Content (Writing) */}
+                  <div className="absolute top-[8%] left-[4%] w-[44%] bottom-[8%] px-6 py-4 flex flex-col">
+                      {/* Header */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 border-b border-red-200 pb-2 mb-2">
+                          <span><strong className="text-gray-400 uppercase text-[9px]">From:</strong> <span className="font-serif text-gray-900">{userName}</span></span>
+                          <span><strong className="text-gray-400 uppercase text-[9px]">To:</strong> <span className="font-serif text-gray-900">Maddy</span></span>
+                          <span className="ml-auto"><strong className="text-gray-400 uppercase text-[9px]">Re:</strong> <span className="font-serif text-blue-700">{userTopic}</span></span>
+                      </div>
+                      {/* Lined Text Area */}
+                      <textarea 
+                          value={userMessage}
+                          onChange={(e) => setUserMessage(e.target.value)}
+                          className="flex-1 w-full bg-transparent border-none resize-none outline-none font-serif text-gray-800 text-lg leading-[2rem] p-0"
+                          style={{
+                              backgroundImage: 'linear-gradient(transparent 31px, #e5e7eb 32px)',
+                              backgroundSize: '100% 2rem',
+                              backgroundAttachment: 'local',
+                              lineHeight: '2rem'
+                          }}
+                          placeholder="Start writing..."
+                          autoFocus
+                      />
+                  </div>
 
-                    <div className="flex-1 relative overflow-hidden">
-                        <textarea 
-                            value={userMessage}
-                            onChange={(e) => setUserMessage(e.target.value)}
-                            className="w-full h-full bg-transparent border-none resize-none outline-none text-gray-800 font-serif p-0 leading-loose"
-                            style={{
-                                fontSize: '14px',
-                                lineHeight: '24px', 
-                            }}
-                            placeholder="Click here to start writing..."
-                            autoFocus
-                        />
-                    </div>
-                </div>
+                  {/* Right Page Content (Contact + Send) */}
+                  <div className="absolute top-[8%] right-[4%] w-[44%] bottom-[8%] px-6 py-4 flex flex-col justify-between">
+                      <div className="mt-8">
+                          <label className="block text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">Contact (Optional)</label>
+                          <input 
+                              value={userContact}
+                              onChange={(e) => setUserContact(e.target.value)}
+                              className="w-full bg-transparent border-b border-blue-200 focus:border-blue-500 text-gray-700 font-serif py-1 focus:outline-none"
+                              placeholder="Email or @handle"
+                          />
+                      </div>
+                      <div className="mb-4">
+                          <button 
+                              onClick={handleSend}
+                              disabled={isSending}
+                              className="w-full py-4 bg-gray-900 hover:bg-black text-white font-serif italic text-lg rounded-xl shadow-lg hover:-translate-y-1 transition-all disabled:opacity-70 flex items-center justify-center gap-2"
+                          >
+                              {isSending ? "Sending..." : "Send it"}
+                          </button>
+                      </div>
+                  </div>
+              </div>
 
-                {/* --- RIGHT PAGE: ACTIONS --- */}
-                <div className="absolute top-[10%] bottom-[10%] left-[52%] right-[4%] px-4 py-6 flex flex-col justify-center items-center text-center">
-                    
-                    <div className="w-full max-w-[80%] space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                Leave your contact (optional)
-                            </label>
-                            <input 
-                                type="text"
-                                value={userContact}
-                                onChange={(e) => setUserContact(e.target.value)}
-                                placeholder="Email or Phone..."
-                                className="w-full bg-transparent border-b border-gray-400 text-center py-1 text-sm font-serif text-gray-800 focus:border-blue-500 outline-none transition-colors placeholder-gray-400"
-                            />
-                        </div>
+              {/* MOBILE LAYOUT: CSS-styled Paper Stack (Collapses to 1 column) */}
+              <div className="md:hidden bg-[#fdf5e6] w-full rounded-2xl border-l-[12px] border-[#121212] shadow-none overflow-hidden flex flex-col min-h-[60vh]">
+                  {/* Mobile Header */}
+                  <div className="bg-white/10 p-4 border-b border-red-100">
+                      <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-600">
+                           <div><span className="text-gray-400 text-[9px] uppercase">From:</span> <span className="font-serif font-bold">{userName}</span></div>
+                           <div><span className="text-gray-400 text-[9px] uppercase">Topic:</span> <span className="font-serif text-blue-600">{userTopic}</span></div>
+                      </div>
+                  </div>
+                  
+                  {/* Mobile Writing Area */}
+                  <div className="flex-1 p-4 relative">
+                      {/* CSS Lines */}
+                      <div className="absolute inset-0 pointer-events-none" 
+                           style={{ backgroundImage: 'linear-gradient(transparent 31px, #e5e7eb 32px)', backgroundSize: '100% 2rem' }}>
+                      </div>
+                      <textarea 
+                          value={userMessage}
+                          onChange={(e) => setUserMessage(e.target.value)}
+                          className="w-full h-full bg-transparent border-none resize-none outline-none font-serif text-gray-800 text-base leading-[2rem] p-0 relative z-10"
+                          placeholder="Tap to write..."
+                      />
+                  </div>
 
-                        <button 
-                            onClick={handleSend}
-                            disabled={isSending}
-                            className="group relative w-full overflow-hidden bg-black text-white font-medium py-2 px-4 rounded shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:cursor-wait"
-                        >
-                            {isSending ? (
-                                <span className="flex items-center justify-center gap-2">
-                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    <span>Saving...</span>
-                                </span>
-                            ) : (
-                                <span className="relative z-10 flex items-center justify-center gap-2">
-                                    <span>Send to Maddy</span>
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1">
-                                        <line x1="22" y1="2" x2="11" y2="13"></line>
-                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                    </svg>
-                                </span>
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
+                  {/* Mobile Footer */}
+                  <div className="p-4 bg-white/30 border-t border-red-100 space-y-4">
+                       <input 
+                          value={userContact}
+                          onChange={(e) => setUserContact(e.target.value)}
+                          className="w-full bg-transparent border-b border-gray-300 py-1 text-sm font-serif placeholder-gray-400 focus:outline-none focus:border-gray-800"
+                          placeholder="Contact info (optional)"
+                       />
+                       <button 
+                          onClick={handleSend}
+                          disabled={isSending}
+                          className="w-full py-3 bg-gray-900 text-white font-serif italic rounded-lg shadow-md"
+                       >
+                          {isSending ? "Sending..." : "Send to Maddy"}
+                       </button>
+                  </div>
+              </div>
+
+          </div>
         )}
 
-        {/* --- STAGE 3: SUCCESS MESSAGE --- */}
+        {/* --- STAGE 3: SUCCESS --- */}
         {stage === 'success' && (
-            <div className="absolute inset-0 z-20 flex items-center justify-center p-6 animate-in zoom-in-95 duration-500">
-                 <div className="bg-white/90 backdrop-blur-md border border-white/50 p-8 rounded-2xl shadow-xl text-center max-w-md transform rotate-1">
-                     <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                     </div>
-                     <h3 className="text-2xl font-serif font-bold text-gray-800 mb-2">thanks !</h3>
-                     <p className="text-gray-600 font-medium mb-1">I'll soon read it and get back to you!</p>
-                     <p className="text-gray-500 text-sm italic">hope you have a nice day</p>
-                     
-                     <button 
-                        onClick={onClose}
-                        className="mt-6 px-8 py-2 bg-black text-white font-medium rounded-full shadow-lg hover:scale-105 transition-transform hover:bg-gray-900"
-                     >
-                        Close
-                     </button>
-                 </div>
-            </div>
+          <div className="relative bg-[#fdf5e6] p-8 max-w-sm w-full text-center shadow-none rounded-xl rotate-1 animate-in zoom-in-95 duration-500 border border-gray-200/50">
+              {/* Tape Effect */}
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-16 h-6 bg-yellow-200/80 rotate-[-2deg] shadow-sm backdrop-blur-sm"></div>
+              
+              <h3 className="font-serif italic text-2xl text-gray-900 mb-2">Received!</h3>
+              <p className="text-gray-600 text-sm mb-6 leading-relaxed">
+                  Thanks for the note, {userName}.<br/>I'll read it shortly.
+              </p>
+              <button 
+                  onClick={onClose}
+                  className="text-xs font-bold uppercase tracking-widest border-b-2 border-gray-900 pb-0.5 hover:text-gray-600 hover:border-gray-600 transition-colors"
+              >
+                  Close Notebook
+              </button>
+          </div>
         )}
 
       </div>
