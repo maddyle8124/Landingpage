@@ -9,7 +9,7 @@ export const CONFIG = {
   baseImageURL: "https://maddyleescorner.wordpress.com/wp-content/uploads/2025/11",
   
   // App Title & Description
-  title: "Welcome, It's Maddy",
+  title: "Welcome, It's Maddy!",
   description: "get to know me real quick, and stay connected via IG or Linkedin, don't forget to leave some stamp at my note book",
   
   // Social Media & External Links
