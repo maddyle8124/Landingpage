@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LiquidFolder from './components/LiquidFolder';
 import { AboutPage } from './components/AboutPage';
+import { CONFIG } from './components/Config';
 
 export default function App() {
+  // Set website title from Config
+  useEffect(() => {
+    document.title = CONFIG.title;
+  }, []);
+
   const [currentPage, setCurrentPage] = useState<'home' | 'about'>('home');
   const [shouldOpenNotebook, setShouldOpenNotebook] = useState(false);
 
