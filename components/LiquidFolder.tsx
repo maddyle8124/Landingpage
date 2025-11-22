@@ -275,28 +275,22 @@ const LiquidFolder: React.FC<LiquidFolderProps> = ({ onNavigate, shouldOpenNoteb
             {decorativeItems.map((item, index) => {
                 let transformClass = "";
                 
-                // Arc Distribution - Moving Upwards by adding -15px to Y axis logic (more negative)
-                // RE-ADJUSTMENT: Moving DOWNWARD (less negative Y) by +10px from previous
+                // Arc Distribution - Moving Upwards
                 switch(index) {
                     case 0: // Far Left (PNG 5)
-                        // Adjusted: -150 -> -140
-                        transformClass = isFolderOpen ? "translate-x-[-120px] translate-y-[-140px] -rotate-12 opacity-100 scale-100" : "translate-y-0 opacity-0";
+                        transformClass = isFolderOpen ? "translate-x-[-120px] translate-y-[-163px] -rotate-12 opacity-100 scale-100" : "translate-y-0 opacity-0";
                         break;
                     case 1: // Mid Left (PNG 6)
-                        // Adjusted: -180 -> -170
-                        transformClass = isFolderOpen ? "translate-x-[-60px] translate-y-[-170px] -rotate-6 opacity-100 scale-110" : "translate-y-0 opacity-0";
+                        transformClass = isFolderOpen ? "translate-x-[-60px] translate-y-[-193px] -rotate-6 opacity-100 scale-110" : "translate-y-0 opacity-0";
                         break;
                     case 2: // Center High (PNG 7)
-                        // Adjusted: -205 -> -195
-                        transformClass = isFolderOpen ? "translate-x-0 translate-y-[-195px] rotate-0 opacity-100 scale-110" : "translate-y-0 opacity-0";
+                        transformClass = isFolderOpen ? "translate-x-0 translate-y-[-218px] rotate-0 opacity-100 scale-110" : "translate-y-0 opacity-0";
                         break;
                     case 3: // Mid Right (PNG 8)
-                        // Adjusted: -190 -> -180
-                        transformClass = isFolderOpen ? "translate-x-[60px] translate-y-[-180px] rotate-6 opacity-100 scale-110" : "translate-y-0 opacity-0";
+                        transformClass = isFolderOpen ? "translate-x-[60px] translate-y-[-203px] rotate-6 opacity-100 scale-110" : "translate-y-0 opacity-0";
                         break;
                     case 4: // Far Right (PNG 9)
-                        // Adjusted: -170 -> -160
-                        transformClass = isFolderOpen ? "translate-x-[120px] translate-y-[-160px] rotate-12 opacity-100 scale-100" : "translate-y-0 opacity-0";
+                        transformClass = isFolderOpen ? "translate-x-[120px] translate-y-[-183px] rotate-12 opacity-100 scale-100" : "translate-y-0 opacity-0";
                         break;
                 }
 
