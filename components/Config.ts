@@ -63,7 +63,7 @@ export const CONFIG = {
     hero: {
       headline: "Hi, I’m Maddy.",
       subHeadline: "A part-time tech marketer, brand builder, storyteller, and full-time ADHD.",
-      descriptor: "I turn dry features into juicy narrative, create brands people remember and products people talk about."
+      descriptor: "I turn dry features into juicy narrative, create brands people remember of and products people talk about."
     },
     // Brands Scroller Section
     brands: {
